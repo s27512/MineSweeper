@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+    <title>Minesweeper</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        var timerInterval;
+
+        function startTimer(startTime) {
+            var timerElement = document.getElementById('timer');
+            timerElement.dataset.startTime = startTime;
+            timerInterval = setInterval(function() {
+                var elapsedTime = Date.now() - parseInt(timerElement.dataset.startTime);
+                var seconds = Math.floor(elapsedTime / 1000);
+                timerElement.textContent = seconds + " seconds";
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function toggleFlag(event, row, col) {
+            event.preventDefault();
+            var cell = document.getElementById('cell-' + row + '-' + col);
+            var isFlagged = cell.classList.toggle('flag');
+            var flagInput = document.getElementById('flag-' + row + '-' + col);
+            flagInput.value = isFlagged ? '1' : '0';
+        }
+
+        window.onload = function() {
+            var startTime = parseInt(document.getElementById('timer').dataset.startTime);
+            if ({{ game_over|tojson }}) {
+                stopTimer();
+            } else {
+                startTimer(startTime);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Minesweeper</h1>
+        <div id="timer" data-start-time="{{ start_time }}">0 seconds</div>
+        {% if game_over %}
+        <h2>Game Over!</h2>
+        <a href="{{ url_for('index') }}" class="play-again">Play Again</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('game') }}">
+            <table>
+                {% for row in range(8) %}
+                <tr>
+                    {% for col in range(8) %}
+                    <td>
+                        <button type="submit" name="cell" value="{{ row }}-{{ col }}" id="cell-{{ row }}-{{ col }}" class="cell {% if flags[row][col] %}flag{% endif %} {% if revealed[row][col] %}revealed revealed-{{ board[row][col] }}{% endif %}" {{ 'disabled' if revealed[row][col] }} oncontextmenu="toggleFlag(event, {{ row }}, {{ col }})">
+                            {{ ' ' if not revealed[row][col] else board[row][col] }}
+                        </button>
+                        <input type="hidden" name="flag-{{ row }}-{{ col }}" id="flag-{{ row }}-{{ col }}" value="{{ '1' if flags[row][col] else '0' }}">
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </form>
+    </div>
+</body>
+</html>
