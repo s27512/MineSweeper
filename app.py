@@ -5,7 +5,7 @@ import time
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-app.config["MONGO_URI"] = "mongodb://mongodb:27017/minesweeper"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/minesweeper"
 mongo = PyMongo(app)
 
 # Game settings
