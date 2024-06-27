@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hub - Minesweeper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #333;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            margin: 0;
+        }
+        .form-container {
+            text-align: center;
+        }
+        .form-container input {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .form-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Welcome to Minesweeper</h1>
+        <form action="{{ url_for('play') }}" method="get">
+            <label for="player_name">Enter your name:</label><br>
+            <input type="text" id="player_name" name="player_name" placeholder="Player Name"><br>
+            <button type="submit">Start Game</button>
+        </form>
+    </div>
+</body>
+</html>
