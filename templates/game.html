@@ -24,7 +24,7 @@
             event.preventDefault();
             var cell = document.getElementById('cell-' + row + '-' + col);
             var isFlagged = cell.classList.toggle('flag');
-            var flagInput = document.getElementById('flag-' + row + '-' + col');
+            var flagInput = document.getElementById('flag-' + row + '-' + col);
             flagInput.value = isFlagged ? '1' : '0';
         }
 
