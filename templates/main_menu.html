@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+    <title>Main Menu - Minesweeper</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main_menu.css') }}">
+</head>
+<body>
+    <div class="menu-container">
+        <h1>Minesweeper</h1>
+        <form method="post" action="{{ url_for('start_game') }}">
+            <label for="player_name">Enter Your Name:</label>
+            <input type="text" id="player_name" name="player_name" required>
+            <button type="submit" class="start-game">Start Game</button>
+        </form>
+        <h2>High Scores</h2>
+        <ul class="score-list">
+            {% for score in scores %}
+            <li>{{ score['name'] }}: {{ score['clicks'] }} clicks</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

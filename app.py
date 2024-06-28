@@ -13,7 +13,6 @@ ROWS = 8
 COLS = 8
 MINES = 10
 
-
 def create_board(rows, cols, mines):
     board = [['' for _ in range(cols)] for _ in range(rows)]
     mines_locations = set()
@@ -34,17 +33,17 @@ def create_board(rows, cols, mines):
             board[r][c] = str(count) if count > 0 else ''
     return board
 
-
 def save_game_state():
     game_state = {
         "board": session['board'],
         "revealed": session['revealed'],
         "flags": session['flags'],
         "start_time": session['start_time'],
-        "game_over": session['game_over']
+        "game_over": session['game_over'],
+        "clicks": session['clicks'],
+        "player_name": session['player_name']
     }
     mongo.db.games.insert_one(game_state)
-
 
 def load_game_state():
     game_state = mongo.db.games.find_one(sort=[('_id', -1)])
@@ -54,30 +53,38 @@ def load_game_state():
         session['flags'] = game_state['flags']
         session['start_time'] = game_state['start_time']
         session['game_over'] = game_state['game_over']
-
+        session['clicks'] = game_state['clicks']
+        session['player_name'] = game_state['player_name']
 
 @app.route('/')
-def index():
+def main_menu():
+    scores = list(mongo.db.scores.find().sort("clicks", 1).limit(10))
+    return render_template('main_menu.html', scores=scores)
+
+@app.route('/start_game', methods=['POST'])
+def start_game():
+    session['player_name'] = request.form['player_name']
     session['board'] = create_board(ROWS, COLS, MINES)
     session['revealed'] = [[False for _ in range(COLS)] for _ in range(ROWS)]
     session['flags'] = [[False for _ in range(COLS)] for _ in range(ROWS)]
     session['start_time'] = time.time()
     session['game_over'] = False
+    session['clicks'] = 0
     start_time = int(session['start_time'] * 1000)
     save_game_state()
     return render_template('index.html', start_time=start_time)
 
-
 @app.route('/game', methods=['POST'])
 def game():
     if session['game_over']:
-        return redirect(url_for('index'))
+        return redirect(url_for('main_menu'))
 
     cell = request.form['cell']
     row, col = map(int, cell.split('-'))
     board = session['board']
     revealed = session['revealed']
     flags = session['flags']
+    session['clicks'] += 1
 
     for r in range(ROWS):
         for c in range(COLS):
@@ -88,6 +95,7 @@ def game():
         if board[row][col] == 'M':
             session['game_over'] = True
             revealed[row][col] = True
+            mongo.db.scores.insert_one({"name": session['player_name'], "clicks": session['clicks']})
         else:
             reveal_cell(row, col, board, revealed)
 
@@ -98,7 +106,6 @@ def game():
     return render_template('game.html', board=board, revealed=revealed, flags=flags, game_over=session['game_over'],
                            start_time=start_time)
 
-
 def reveal_cell(row, col, board, revealed):
     if revealed[row][col]:
         return
@@ -108,7 +115,6 @@ def reveal_cell(row, col, board, revealed):
             for dc in (-1, 0, 1):
                 if 0 <= row + dr < ROWS and 0 <= col + dc < COLS:
                     reveal_cell(row + dr, col + dc, board, revealed)
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
