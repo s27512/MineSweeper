@@ -24,60 +24,44 @@
             event.preventDefault();
             var cell = document.getElementById('cell-' + row + '-' + col);
             var isFlagged = cell.classList.toggle('flag');
-            var flagInput = document.getElementById('flag-' + row + '-' + col);
+            var flagInput = document.getElementById('flag-' + row + '-' + col');
             flagInput.value = isFlagged ? '1' : '0';
         }
 
         window.onload = function() {
             var startTime = parseInt(document.getElementById('timer').dataset.startTime);
-            if (startTime > 0) {
+            if ({{ game_over|tojson }}) {
+                stopTimer();
+            } else {
                 startTimer(startTime);
             }
-        };
+        }
     </script>
 </head>
 <body>
     <div class="container">
         <h1>Minesweeper</h1>
-        <div id="timer" class="timer" data-start-time="{{ start_time }}"></div>
-        <table>
-            <tbody>
-                {% for r in range(board|length) %}
+        <div id="timer" data-start-time="{{ start_time }}">0 seconds</div>
+        {% if game_over %}
+        <h2>Game Over!</h2>
+        <a href="{{ url_for('index') }}" class="play-again">Play Again</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('game') }}">
+            <table>
+                {% for row in range(8) %}
                 <tr>
-                    {% for c in range(board[0]|length) %}
+                    {% for col in range(8) %}
                     <td>
-                        {% set cell_id = 'cell-' + r|string + '-' + c|string %}
-                        {% set cell_class = 'cell' %}
-                        {% if revealed[r][c] %}
-                            {% if board[r][c] == 'M' %}
-                                {% set cell_class = cell_class + ' bomb' %}
-                            {% else %}
-                                {% set cell_class = cell_class + ' revealed revealed-' + board[r][c] %}
-                            {% endif %}
-                        {% endif %}
-                        {% if flags[r][c] %}
-                            {% set cell_class = cell_class + ' flag' %}
-                        {% endif %}
-                        <button id="{{ cell_id }}" class="{{ cell_class }}" {% if not revealed[r][c] or board[r][c] == 'M' %}onclick="reveal('{{ r }}', '{{ c }}')" {% endif %}>
-                            {% if flags[r][c] %}
-                                <img src="{{ url_for('static', filename='flag.png') }}" width="20" height="20" alt="Flag">
-                            {% elif revealed[r][c] and board[r][c] == 'M' %}
-                                <img src="{{ url_for('static', filename='bomb.png') }}" width="20" height="20" alt="Bomb">
-                            {% elif revealed[r][c] and board[r][c]|int > 0 %}
-                                {{ board[r][c] }}
-                            {% endif %}
+                        <button type="submit" name="cell" value="{{ row }}-{{ col }}" id="cell-{{ row }}-{{ col }}" class="cell {% if flags[row][col] %}flag{% endif %} {% if revealed[row][col] %}revealed revealed-{{ board[row][col] }}{% endif %}" {{ 'disabled' if revealed[row][col] }} oncontextmenu="toggleFlag(event, {{ row }}, {{ col }})">
+                            {{ ' ' if not revealed[row][col] else board[row][col] }}
                         </button>
-                        <input type="hidden" id="flag-{{ r }}-{{ c }}" name="flag-{{ r }}-{{ c }}" value="0">
+                        <input type="hidden" name="flag-{{ row }}-{{ col }}" id="flag-{{ row }}-{{ col }}" value="{{ '1' if flags[row][col] else '0' }}">
                     </td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-        {% if game_over %}
-            <h2>Game Over</h2>
-            <a class="play-again" href="{{ url_for('menu') }}">Play Again</a>
-        {% endif %}
+            </table>
+        </form>
     </div>
 </body>
 </html>
