@@ -44,7 +44,7 @@
         <div id="timer" data-start-time="{{ start_time }}">0 seconds</div>
         {% if game_over %}
         <h2>Game Over!</h2>
-        <a href="{{ url_for('index') }}" class="play-again">Play Again</a>
+        <a href="{{ url_for('main_menu') }}" class="play-again">Back to Main Menu</a>
         {% endif %}
         <form method="post" action="{{ url_for('game') }}">
             <table>

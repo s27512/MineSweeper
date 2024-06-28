@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_pymongo import PyMongo
 import random
 import time
@@ -56,13 +56,26 @@ def load_game_state():
         session['game_over'] = game_state['game_over']
 
 
+def calculate_score(start_time, end_time, revealed, flags, board):
+    time_taken = end_time - start_time
+    revealed_count = sum(sum(row) for row in revealed)
+    correct_flags = sum(1 for r in range(ROWS) for c in range(COLS) if flags[r][c] and board[r][c] == 'M')
+
+    time_score = max(0, 1000 - int(time_taken))
+    cell_score = revealed_count * 10
+    flag_score = correct_flags * 50
+
+    total_score = time_score + cell_score + flag_score
+    return total_score
+
+
 @app.route('/')
 def main_menu():
-    scores = list(mongo.db.scores.find().sort('clicks', 1).limit(10))
+    scores = list(mongo.db.scores.find().sort('score', -1).limit(10))
     return render_template('main_menu.html', scores=scores)
 
 
-@app.route('/start', methods=['POST'])
+@app.route('/start_game', methods=['POST'])
 def start_game():
     session['player_name'] = request.form['player_name']
     return redirect(url_for('index'))
@@ -77,7 +90,8 @@ def index():
     session['game_over'] = False
     start_time = int(session['start_time'] * 1000)
     save_game_state()
-    return render_template('index.html', start_time=start_time)
+    return render_template('game.html', start_time=start_time, game_over=session['game_over'],
+                           board=session['board'], revealed=session['revealed'], flags=session['flags'])
 
 
 @app.route('/game', methods=['POST'])
@@ -100,6 +114,15 @@ def game():
         if board[row][col] == 'M':
             session['game_over'] = True
             revealed[row][col] = True
+            end_time = time.time()
+            score = calculate_score(session['start_time'], end_time, revealed, flags, board)
+            mongo.db.scores.insert_one({
+                'player_name': session['player_name'],
+                'score': score,
+                'clicks': sum(sum(row) for row in revealed) + sum(sum(row) for row in flags)
+            })
+            flash(f'Game Over! Your score is {score}')
+            return redirect(url_for('game_over'))
         else:
             reveal_cell(row, col, board, revealed)
 
@@ -120,6 +143,12 @@ def reveal_cell(row, col, board, revealed):
             for dc in (-1, 0, 1):
                 if 0 <= row + dr < ROWS and 0 <= col + dc < COLS:
                     reveal_cell(row + dr, col + dc, board, revealed)
+
+
+@app.route('/game_over')
+def game_over():
+    scores = list(mongo.db.scores.find().sort('score', -1).limit(10))
+    return render_template('main_menu.html', scores=scores, game_over=True)
 
 
 if __name__ == '__main__':

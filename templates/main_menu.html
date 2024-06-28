@@ -15,9 +15,20 @@
         <h2>High Scores</h2>
         <ul class="score-list">
             {% for score in scores %}
-            <li>{{ score['name'] }}: {{ score['clicks'] }} clicks</li>
+            <li>{{ score['player_name'] }}: {{ score['score'] }} points</li>
             {% endfor %}
         </ul>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+          <div class="game-over-message">
+              <ul>
+              {% for message in messages %}
+                  <li>{{ message }}</li>
+              {% endfor %}
+              </ul>
+          </div>
+          {% endif %}
+        {% endwith %}
     </div>
 </body>
 </html>
