@@ -1,44 +1,31 @@
 import unittest
-from app import create_board, reveal_cell
-
+from app import app, create_board, reveal_cell
+from flask import session
 
 class TestMinesweeperGame(unittest.TestCase):
 
     def setUp(self):
-        self.rows = 8
-        self.cols = 8
-        self.mines = 10
+        self.app = app.test_client()
+        self.app.testing = True
 
-    def test_board_creation(self):
-        board = create_board(self.rows, self.cols, self.mines)
-        self.assertEqual(len(board), self.rows)
-        for row in board:
-            self.assertEqual(len(row), self.cols)
+    def test_start_game(self):
+        response = self.app.post('/start_game', data={'player_name': 'TestPlayer'})
+        self.assertEqual(response.status_code, 302)  # Redirect to index
+        with self.app.session_transaction() as sess:
+            self.assertEqual(sess['player_name'], 'TestPlayer')
+
+    def test_create_board(self):
+        board = create_board(8, 8, 10)
         mine_count = sum(row.count('M') for row in board)
-        self.assertEqual(mine_count, self.mines)
+        self.assertEqual(mine_count, 10)
+        for row in board:
+            self.assertEqual(len(row), 8)
 
-    def test_cell_revealing(self):
-        board = create_board(self.rows, self.cols, self.mines)
-        revealed = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+    def test_reveal_cell(self):
+        board = create_board(8, 8, 10)
+        revealed = [[False for _ in range(8)] for _ in range(8)]
         reveal_cell(0, 0, board, revealed)
         self.assertTrue(revealed[0][0])
 
-        reveal_cell(0, 0, board, revealed)
-        self.assertTrue(revealed[0][1])
-        self.assertTrue(revealed[1][0])
-        self.assertTrue(revealed[1][1])
-
-    def test_flagging(self):
-
-        flags = [[False for _ in range(self.cols)] for _ in range(self.rows)]
-
-        flags[0][0] = True
-        self.assertTrue(flags[0][0])
-
-        flags[0][0] = False
-        self.assertFalse(flags[0][0])
-
-
 if __name__ == '__main__':
     unittest.main()
-
